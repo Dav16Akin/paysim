@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PaySim 💸
+
+A modern payment simulation web application built with **Next.js**, **TypeScript**, and **Tailwind CSS**. PaySim lets users register, log in, view their wallet balance, send transfers, and track their transaction history — all backed by a live REST API.
+
+![PaySim Dashboard](https://github.com/user-attachments/assets/ca74bc24-ddcf-4c85-a71d-776f15536708)
+
+---
+
+## Features
+
+- 🔐 **Authentication** — Sign up and sign in with JWT-based sessions
+- 💰 **Wallet** — View your real-time balance
+- 🔄 **Transfers** — Send money to other users instantly
+- 📊 **Transactions** — Browse your full transaction history with status indicators
+- 📱 **Responsive UI** — Clean sidebar layout built with shadcn/ui and Recharts
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | [Next.js 16](https://nextjs.org) (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS v4 |
+| Components | [shadcn/ui](https://ui.shadcn.com), Radix UI |
+| Charts | [Recharts](https://recharts.org) |
+| Icons | [Lucide React](https://lucide.dev) |
+| Backend API | Go REST API (hosted on Railway) |
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm / yarn / pnpm / bun
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/Dav16Akin/paysim.git
+cd paysim
+
+# Install dependencies
+npm install
+```
+
+### Running the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser. You will be redirected to the login page automatically.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+paysim/
+├── app/
+│   ├── login/          # Login & sign-up page
+│   ├── dashboard/      # Main dashboard & transactions page
+│   └── layout.tsx      # Root layout
+├── components/
+│   ├── shared/         # Sidebar, TransferModal
+│   └── ui/             # shadcn/ui primitives
+├── context/
+│   └── AuthContext.tsx # Global auth state
+└── lib/
+    └── api.ts          # API client (auth, wallet, transactions)
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Available Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start the production server |
+| `npm run lint` | Run ESLint |
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The frontend communicates with a Go-based REST API deployed on Railway:
+
+```
+https://go-payment-api-production.up.railway.app
+```
+
+Key endpoints used:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/sign-up` | Register a new user |
+| `POST` | `/sign-in` | Authenticate and receive a JWT |
+| `GET` | `/wallet?user_id=` | Fetch wallet balance |
+| `GET` | `/transactions/user?user_id=` | Fetch user transactions |
+| `POST` | `/transfer` | Send a payment |
+
+---
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
