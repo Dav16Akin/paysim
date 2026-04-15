@@ -19,32 +19,34 @@ import {
 } from "lucide-react";
 
 const generalLinks = [
-  { name: "Overview", href: "/dashboard", icon: LayoutGrid },
+  { name: "Overview", href: "/dashboard", icon: LayoutGrid, active: true },
   {
     name: "Transactions",
     href: "/dashboard/transactions",
     icon: ArrowLeftRight,
+    active: true
   },
-  { name: "Payment", href: "/dashboard/payment", icon: CreditCard },
-  { name: "Report", href: "/dashboard/report", icon: FileText },
-  { name: "Budgets", href: "/dashboard/budgets", icon: Wallet },
+  { name: "Payment", href: "/dashboard/payment", icon: CreditCard, active: false },
+  { name: "Report", href: "/dashboard/report", icon: FileText, active: false },
+  { name: "Budgets", href: "/dashboard/budgets", icon: Wallet, active: false },
 ];
 
 const toolLinks = [
-  { name: "AI Insights", href: "/dashboard/ai", icon: Sparkles },
-  { name: "Savings Planner", href: "/dashboard/savings", icon: PiggyBank },
-  { name: "Expense Tracker", href: "/dashboard/expenses", icon: BarChart3 },
+  { name: "AI Insights", href: "/dashboard/ai", icon: Sparkles, active: false },
+  { name: "Savings Planner", href: "/dashboard/savings", icon: PiggyBank, active: false },
+  { name: "Expense Tracker", href: "/dashboard/expenses", icon: BarChart3, active: false },
   {
     name: "Investment Tracker",
     href: "/dashboard/investments",
     icon: TrendingUp,
+    active: false
   },
 ];
 
 const bottomLinks = [
-  { name: "Help Center", href: "/dashboard/help", icon: HelpCircle },
-  { name: "Setting", href: "/dashboard/settings", icon: Settings },
-  { name: "Profile", href: "/dashboard/profile", icon: User },
+  { name: "Help Center", href: "/dashboard/help", icon: HelpCircle, active: false },
+  { name: "Setting", href: "/dashboard/settings", icon: Settings , active: false},
+  { name: "Profile", href: "/dashboard/profile", icon: User, active: false },
 ];
 
 const SidebarComponent = () => {
@@ -58,14 +60,14 @@ const SidebarComponent = () => {
   const NavLink = ({
     link,
   }: {
-    link: { name: string; href: string; icon: React.ElementType };
+    link: { name: string; href: string; icon: React.ElementType, active: boolean };
   }) => {
     const active = isActive(link.href);
     const Icon = link.icon;
     return (
       <Link
         href={link.href}
-        className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+        className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${link.active === false ? "cursor-not-allowed pointer-events-none text-zinc-400/50" : ""} ${
           active
             ? "bg-[#baff29] text-black"
             : "text-zinc-400 hover:bg-white/5 hover:text-white"
