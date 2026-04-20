@@ -265,8 +265,13 @@ export default function DashboardPage() {
                 onClick={() => setShowUserMenu((v) => !v)}
                 className="flex items-center gap-2 bg-white border border-zinc-200 rounded-xl px-3 py-2 cursor-pointer hover:border-zinc-300 transition"
               >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#baff29] to-[#4caf50] flex items-center justify-center text-xs font-bold text-black">
-                  {getInitials(user.name)}
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#baff29] to-[#4caf50] flex items-center justify-center text-xs font-bold text-black overflow-hidden relative">
+                  {user.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    getInitials(user.name)
+                  )}
                 </div>
                 <span className="text-sm font-medium text-zinc-700">
                   {user.name}
@@ -292,7 +297,10 @@ export default function DashboardPage() {
                   <div className="py-1">
                     <button
                       className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition"
-                      onClick={() => setShowUserMenu(false)}
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        router.push("/dashboard/profile");
+                      }}
                     >
                       <User size={15} className="text-zinc-400" />
                       View Profile

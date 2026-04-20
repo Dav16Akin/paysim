@@ -8,6 +8,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatar_url?: string;
 }
 
 export interface AuthResponse {
@@ -16,6 +17,7 @@ export interface AuthResponse {
     id: string;
     name: string;
     email: string;
+    avatar_url?: string;
   };
 }
 
@@ -83,6 +85,15 @@ async function request<T>(
     json = text ? JSON.parse(text) : {};
   } catch {
     json = { message: text };
+  }
+
+  if (res.status === 401) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("paysim_token");
+      localStorage.removeItem("paysim_user");
+      window.location.href = "/login";
+    }
+    throw new Error("Session expired. Please log in again.");
   }
 
   if (!res.ok) {
@@ -155,6 +166,22 @@ export async function getTransactionsByUser(
 export async function transfer(payload: TransferPayload): Promise<unknown> {
   return request<unknown>("/transfer", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// ────────────────────────────────────────────
+// Profile
+// ────────────────────────────────────────────
+
+export interface UpdateProfilePayload {
+  name?: string;
+  avatar_url?: string;
+}
+
+export async function updateProfile(payload: UpdateProfilePayload): Promise<User> {
+  return request<User>("/users/profile", {
+    method: "PATCH",
     body: JSON.stringify(payload),
   });
 }

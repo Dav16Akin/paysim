@@ -46,7 +46,7 @@ const toolLinks = [
 const bottomLinks = [
   { name: "Help Center", href: "/dashboard/help", icon: HelpCircle, active: false },
   { name: "Setting", href: "/dashboard/settings", icon: Settings , active: false},
-  { name: "Profile", href: "/dashboard/profile", icon: User, active: false },
+  { name: "Profile", href: "/dashboard/profile", icon: User, active: true },
 ];
 
 const SidebarComponent = () => {

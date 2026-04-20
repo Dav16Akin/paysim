@@ -19,6 +19,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  avatar_url?: string;
 }
 
 interface AuthContextValue {
@@ -28,6 +29,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (data: Partial<AuthUser>) => void;
 }
 
 // ────────────────────────────────────────────
@@ -43,11 +45,11 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const TOKEN_KEY = "paysim_token";
 const USER_KEY = "paysim_user";
 
-function persistAuth(resp: { token: string; user: { id: string; name: string; email: string } }) {
+function persistAuth(resp: { token: string; user: { id: string; name: string; email: string; avatar_url?: string } }) {
   localStorage.setItem(TOKEN_KEY, resp.token);
   localStorage.setItem(
     USER_KEY,
-    JSON.stringify({ id: resp.user.id, name: resp.user.name, email: resp.user.email })
+    JSON.stringify({ id: resp.user.id, name: resp.user.name, email: resp.user.email, avatar_url: resp.user.avatar_url })
   );
 }
 
@@ -86,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const resp = await apiSignIn(email, password);
     persistAuth(resp);
     setToken(resp.token);
-    setUser({ id: resp.user.id, name: resp.user.name, email: resp.user.email });
+    setUser({ id: resp.user.id, name: resp.user.name, email: resp.user.email, avatar_url: resp.user.avatar_url });
     router.push("/dashboard");
   }, [router]);
 
@@ -98,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const resp = await apiSignIn(email, password);
       persistAuth(resp);
       setToken(resp.token);
-      setUser({ id: resp.user.id, name: resp.user.name, email: resp.user.email });
+      setUser({ id: resp.user.id, name: resp.user.name, email: resp.user.email, avatar_url: resp.user.avatar_url });
       router.push("/dashboard");
     },
     [router]
@@ -111,8 +113,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/login");
   }, [router]);
 
+  const updateUser = useCallback((data: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...data };
+      if (token) {
+        persistAuth({ token, user: updated });
+      }
+      return updated;
+    });
+  }, [token]);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
