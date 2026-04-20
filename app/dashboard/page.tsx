@@ -144,7 +144,6 @@ const CustomTooltip = ({
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
-  console.log(user);
   const router = useRouter();
 
   const [wallet, setWallet] = useState<Wallet | null>(null);

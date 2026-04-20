@@ -185,3 +185,15 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<User
     body: JSON.stringify(payload),
   });
 }
+
+export interface ChangePasswordPayload {
+  old_password?: string;
+  new_password?: string;
+}
+
+export async function changePassword(payload: ChangePasswordPayload): Promise<unknown> {
+  return request<unknown>("/users/password", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
