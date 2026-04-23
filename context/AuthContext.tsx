@@ -9,7 +9,7 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { signIn as apiSignIn, signUp as apiSignUp } from "@/lib/api";
+import { signIn as apiSignIn, signUp as apiSignUp, getMe, setAccessToken, clearAccessToken } from "@/lib/api";
 
 // ────────────────────────────────────────────
 // Types
@@ -42,19 +42,22 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 // Storage helpers
 // ────────────────────────────────────────────
 
-const TOKEN_KEY = "paysim_token";
+const ACCESS_TOKEN_KEY = "paysim_access_token";
 const USER_KEY = "paysim_user";
 
-function persistAuth(resp: { token: string; user: { id: string; name: string; email: string; avatar_url?: string } }) {
-  localStorage.setItem(TOKEN_KEY, resp.token);
+function persistToken(accessToken: string) {
+  setAccessToken(accessToken);
+}
+
+function persistUser(user: { id: string; name: string; email: string; avatar_url?: string }) {
   localStorage.setItem(
     USER_KEY,
-    JSON.stringify({ id: resp.user.id, name: resp.user.name, email: resp.user.email, avatar_url: resp.user.avatar_url })
+    JSON.stringify({ id: user.id, name: user.name, email: user.email, avatar_url: user.avatar_url })
   );
 }
 
 function clearAuth() {
-  localStorage.removeItem(TOKEN_KEY);
+  clearAccessToken();
   localStorage.removeItem(USER_KEY);
 }
 
@@ -71,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Hydrate from localStorage on mount
   useEffect(() => {
     try {
-      const storedToken = localStorage.getItem(TOKEN_KEY);
+      const storedToken = localStorage.getItem(ACCESS_TOKEN_KEY);
       const storedUser = localStorage.getItem(USER_KEY);
       if (storedToken && storedUser) {
         setToken(storedToken);
@@ -85,10 +88,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const resp = await apiSignIn(email, password);
-    persistAuth(resp);
-    setToken(resp.token);
-    setUser({ id: resp.user.id, name: resp.user.name, email: resp.user.email, avatar_url: resp.user.avatar_url });
+    // 1. Sign in — get access token (refresh token arrives as HttpOnly cookie)
+    const { accessToken } = await apiSignIn(email, password);
+    persistToken(accessToken);
+    setToken(accessToken);
+    // 2. Fetch user profile now that the token is stored
+    const { user: me } = await getMe();
+    persistUser(me);
+    setUser({ id: me.id, name: me.name, email: me.email, avatar_url: me.avatar_url });
     router.push("/dashboard");
   }, [router]);
 
@@ -96,11 +103,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (name: string, email: string, password: string) => {
       // sign-up only creates the user (no token returned)
       await apiSignUp(name, email, password);
-      // auto sign-in to obtain the token
-      const resp = await apiSignIn(email, password);
-      persistAuth(resp);
-      setToken(resp.token);
-      setUser({ id: resp.user.id, name: resp.user.name, email: resp.user.email, avatar_url: resp.user.avatar_url });
+      // auto sign-in to obtain the tokens
+      const { accessToken } = await apiSignIn(email, password);
+      persistToken(accessToken);
+      setToken(accessToken);
+      // fetch user profile
+      const { user: me } = await getMe();
+      persistUser(me);
+      setUser({ id: me.id, name: me.name, email: me.email, avatar_url: me.avatar_url });
       router.push("/dashboard");
     },
     [router]
@@ -117,12 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((prev) => {
       if (!prev) return prev;
       const updated = { ...prev, ...data };
-      if (token) {
-        persistAuth({ token, user: updated });
-      }
+      persistUser(updated);
       return updated;
     });
-  }, [token]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, updateUser }}>
