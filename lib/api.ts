@@ -1,4 +1,4 @@
-const BASE_URL = "https://go-payment-api-production.up.railway.app";
+const BASE_URL = "https://go-payment-api.fly.dev";
 
 // ────────────────────────────────────────────
 // Types
