@@ -139,16 +139,27 @@ const CustomTooltip = ({
 };
 
 // ────────────────────────────────────────────
+// Session-level cache — survives route changes
+// (module scope is preserved while the app is mounted)
+// ────────────────────────────────────────────
+
+let _cachedWallet: Wallet | null = null;
+let _cachedTransactions: Transaction[] = [];
+let _cachePopulated = false;
+
+// ────────────────────────────────────────────
 // Dashboard Page
 // ────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Restore from session cache instantly so navigating back shows data immediately
+  const [wallet, setWallet] = useState<Wallet | null>(_cachedWallet);
+  const [transactions, setTransactions] = useState<Transaction[]>(_cachedTransactions);
+  // Only show the full-page spinner on the very first load (nothing cached yet)
+  const [isLoading, setIsLoading] = useState(!_cachePopulated);
   const [error, setError] = useState<string | null>(null);
   const [showTransfer, setShowTransfer] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -165,34 +176,66 @@ export default function DashboardPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Redirect to login if no user
+  // Redirect to login only after auth has finished hydrating from localStorage
   useEffect(() => {
-    if (!user) router.replace("/login");
-  }, [user, router]);
+    if (!authLoading && !user) router.replace("/login");
+  }, [authLoading, user, router]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (silent = false) => {
     if (!user) return;
-    setIsLoading(true);
+    // silent = true when we already have cached data and just want a background refresh
+    if (!silent) setIsLoading(true);
     setError(null);
-    try {
-      const [walletData, txData] = await Promise.all([
-        getWallet(user.id),
-        getTransactionsByUser(user.id),
-      ]);
-      setWallet(walletData);
-      setTransactions(Array.isArray(txData) ? txData : []);
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load dashboard data.",
-      );
-    } finally {
-      setIsLoading(false);
+
+    const [walletResult, txResult] = await Promise.allSettled([
+      getWallet(user.id),
+      getTransactionsByUser(user.id),
+    ]);
+
+    // Every user is created with a wallet — a failure here is a real network error,
+    // but we never surface it as a visible error (we just keep the cached value).
+    if (walletResult.status === "fulfilled") {
+      _cachedWallet = walletResult.value;
+      setWallet(walletResult.value);
     }
+
+    // An empty array is a valid response — new accounts have no transactions yet.
+    if (txResult.status === "fulfilled") {
+      const txs = Array.isArray(txResult.value) ? txResult.value : [];
+      _cachedTransactions = txs;
+      setTransactions(txs);
+    } else if (!silent) {
+      // Only show an error banner on non-silent fetches AND only for real failures
+      // (not empty lists — the backend returns [] for that, not an error).
+      const msg =
+        txResult.reason instanceof Error
+          ? txResult.reason.message
+          : "Failed to load transactions.";
+      // Don't show "no transactions" style messages as errors
+      if (!msg.toLowerCase().includes("no transaction")) {
+        setError(msg);
+      }
+    }
+
+    _cachePopulated = true;
+    setIsLoading(false);
   }, [user]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!user) return;
+    // If we already have cached data, do a silent background refresh
+    // so the user sees their old data instantly while we quietly update it.
+    fetchData(_cachePopulated);
+  }, [fetchData, user]);
+
+  // Show spinner while auth context is still hydrating from localStorage
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#f4f5f4] flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-zinc-300" />
+      </div>
+    );
+  }
 
   if (!user) return null;
 
@@ -338,7 +381,7 @@ export default function DashboardPage() {
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
             <span>{error}</span>
             <button
-              onClick={fetchData}
+              onClick={() => fetchData()}
               className="ml-auto underline font-medium"
             >
               Retry
@@ -385,7 +428,7 @@ export default function DashboardPage() {
                 Request
               </button>
               <button
-                onClick={fetchData}
+                onClick={() => fetchData()}
                 className="flex items-center gap-1.5 bg-white/10 backdrop-blur border border-white/10 text-white font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-white/20 transition cursor-pointer"
               >
                 <RefreshCw
